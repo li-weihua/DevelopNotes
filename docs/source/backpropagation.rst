@@ -4,8 +4,8 @@ Backpropagation的推导
 约定
 ^^^^
 
-.. math:: 
-  z^{l+1}_j =\sum_k w^l_{jk} a^l_k + b^l_j, \quad a^l_j=\sigma(z^l_j) 
+.. math::
+  z^{l+1}_j =\sum_k w^l_{jk} a^l_k + b^l_j, \quad a^l_j=\sigma(z^l_j)
   :label: explicitform
 
 其中，:math:`z^l_j` 表示未激活前第 :math:`l` 层、第 :math:`j` 个神经元的值，:math:`w^l_{jk}` 为连接第 :math:`l` 层第 :math:`j` 个神经元和第 :math:`l+1` 层第k个神经元的权重，
@@ -25,7 +25,7 @@ Backpropagation的推导
 
 我们约定C为损失函数（loss function），并记：
 
-.. math:: 
+.. math::
 	\delta^l = \frac{\partial C}{\partial z^l}
 
 约定 **Hadamard product** 或者elementwise相乘为（重复指标不求和）：
@@ -74,12 +74,12 @@ BP算法总结
 
 BP算法可以概括为以下四个关系式：
 
-.. math::	
+.. math::
 	  \begin{aligned}
 		\delta^l &= \frac{\partial C}{\partial z^l} = \nabla_z C   \\
 		\frac{\partial C}{\partial w^l} &= \delta^{l+1} (a^l)^T    \\
 		\frac{\partial C}{\partial b^l} &= \delta^{l+1}            \\
-		\delta^l &= (w^l)^T \delta^{l+1}\odot\sigma^{'}(z^l)    
-	  \end{aligned}	
+		\delta^l &= (w^l)^T \delta^{l+1}\odot\sigma^{'}(z^l)
+	  \end{aligned}
 
 可以看出，可以从 :math:`\delta^{l+1}` 的推导出对第 :math:`l` 层的权重和偏移量的偏导，以及第 :math:`l` 层的未激活前的神经元的偏导。

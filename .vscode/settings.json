@@ -1,0 +1,21 @@
+{
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.tabSize": 4,
+        // Auto sort imports
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+        },
+    },
+    "black-formatter.args": [
+        "--line-length",
+        "120"
+    ],
+    "isort.args": [
+        "--profile",
+        "black",
+        "--line-length",
+        "120"
+    ],
+}
