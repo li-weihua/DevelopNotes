@@ -1,5 +1,5 @@
-layernorm
-===========
+方差和layernorm
+================
 
 方差计算
 --------
@@ -30,19 +30,20 @@ layernorm
     &= (x_n - \bar{x}_n) (x_n - \bar{x}_{n-1})
 	\end{aligned}
 
-定义 :math:`M_{2,n}` 如下：
+定义 :math:`M_n` (文献中通常定义成 :math:`M_{2,n}` ) 如下：
 
 .. math::
-    M_{2,n} = \sum_{i=1}^n (x_i - \bar{x}_n)^2
+    M_{n} = \sum_{i=1}^n (x_i - \bar{x}_n)^2
 
 可以得到Welford算法如下：
 
 .. math::
 	\begin{aligned}
-    M_{2,n} &= M_{2,n-1} + (x_n - \bar{x}_n) (x_n - \bar{x}_{n-1}) \\
-    \sigma_n^2 &= M_{2,n} / n
+    M_{n} &= M_{n-1} + (x_n - \bar{x}_n) (x_n - \bar{x}_{n-1}) \\
+    \sigma_n^2 &= M_{n} / n
 	\end{aligned}
 
+当 :math:`x_n` 偏离均值比较多的时候
 
 python实现示例如下：
 
