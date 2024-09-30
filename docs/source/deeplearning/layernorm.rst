@@ -43,7 +43,7 @@
     \sigma_n^2 &= M_{n} / n
 	\end{aligned}
 
-当 :math:`x_n` 偏离均值比较多的时候
+当 :math:`x_n` 偏离均值比较多的时候，:math:`x_n - \bar{x}_n` 比较小，:math:`x_n - \bar{x}_{n-1}` 比较大， 线性偏差。
 
 python实现示例如下：
 
