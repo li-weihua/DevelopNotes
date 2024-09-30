@@ -1,6 +1,4 @@
 deep learning
 ***************
 
-.. include:: autodiff.rst
-.. include:: huggingface.rst
-.. include:: layernorm.rst
+.. include:: variance.rst

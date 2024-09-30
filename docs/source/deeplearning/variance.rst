@@ -1,16 +1,26 @@
-方差和layernorm
+方差计算
 ================
 
-方差计算
---------
-
-方差定义：
+方差定义（two-pass method）：
 
 .. math::
 	\begin{aligned}
     \bar{x}_n &= \frac{1}{n} \sum_{i=1}^{n} x_i \\
     \sigma^2_n &= \frac{1}{n} \sum_{i=1}^{n} (x_i - \bar{x}_n)^2
 	\end{aligned}
+
+方差计算简化方式 (naive method, use one-pass)：
+
+.. math::
+	\begin{aligned}
+    \sigma^2_n &= \frac{1}{n} \sum_{i=1}^{n} x_i^2 - \bar{x}_n^2
+	\end{aligned}
+
+
+Welford计算方差
+----------------
+
+Welford计算方差是用one-pass method，但误差远小于naive method。
 
 均值的递推关系：
 
@@ -49,6 +59,17 @@ python实现示例如下：
 
 .. literalinclude:: ../../../python/welford.py
     :language: python
+
+
+
+c++实现示例
+-------------
+
+demo值考虑样本数是4的倍数。
+
+c++实现示例 `WelfordCpp`_， 支持x86 sse和arm neon指令。
+
+.. _WelfordCpp: https://github.com/li-weihua/DevelopNotes/tree/main/projects/variance
 
 
 相关链接
