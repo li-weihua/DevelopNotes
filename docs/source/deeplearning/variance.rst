@@ -25,6 +25,8 @@ Welford计算方差是用one-pass method，但误差远小于naive method。
 均值的递推关系：
 
 .. math::
+    :label: welford_mean_recursive
+
     \bar{x}_n = \frac{(n-1)\bar{x}_{n-1} + x_n }{n} = \bar{x}_{n-1} + \frac{x_n - \bar{x}_{n-1}}{n}
 
 方差的递推关系：
@@ -48,6 +50,8 @@ Welford计算方差是用one-pass method，但误差远小于naive method。
 可以得到Welford算法如下：
 
 .. math::
+    :label: welford_var_recursive
+
 	\begin{aligned}
     M_{n} &= M_{n-1} + (x_n - \bar{x}_n) (x_n - \bar{x}_{n-1}) \\
     \sigma_n^2 &= M_{n} / n
@@ -60,16 +64,63 @@ python实现示例如下：
 .. literalinclude:: ../../../python/welford.py
     :language: python
 
-
-
 c++实现示例
 -------------
 
-demo值考虑样本数是4的倍数。
+demo只考虑样本数是4的倍数。
 
 c++实现示例 `WelfordCpp`_， 支持x86 sse和arm neon指令。
 
 .. _WelfordCpp: https://github.com/li-weihua/DevelopNotes/tree/main/projects/variance
+
+
+除法计算和Newton-Raphson iteration
+-----------------------------------
+
+均值递推关系 :eq:`welford_mean_recursive` 需要计算除法 ``1/n``，但除法计算的延迟比较高。
+
+`Newton's method (Newton-Raphson method) <https://en.wikipedia.org/wiki/Newton%27s_method>`_:
+
+.. math::
+
+    x_1 = x_0 - \frac{f(x_0)}{f^{\prime}(x_0)}
+
+
+`Newton–Raphson division`_ is a fast method to calculate the reciprocal of a number :math:`a`.
+We can define :math:`f(x) = 1/x - a` and thus :math:`f^{\prime}(x) = -1/x^2`.
+
+Then Newton's iteration is:
+
+.. math::
+    \begin{aligned}
+    x_{n+1} &= x_n - \frac{f(x_n)}{f^{\prime}(x_n)} \\
+            &= x_n - \frac{\frac{1}{x_n} - a}{-\frac{1}{x_n^2}} \\
+            &= x_n (2 - a x_n)
+    \end{aligned}
+
+为什么不选去其他函数，比如 :math:`f(x) = a x - 1` ，主要是收敛性和收敛速度等决定的。
+
+ARM neon实现示例如下：
+
+.. code:: c++
+
+    float32x4_t fast_reciprocal(float32x4_t a) {
+        float32x4_t recip = vrecpeq_f32(a);
+
+        // Newton-Raphson iteration two times
+        recip = vmulq_f32(recip, vrecpsq_f32(recip, a));
+        recip = vmulq_f32(recip, vrecpsq_f32(recip, a));
+
+        return recip;
+    }
+
+``vrecpsq_f32`` 就是计算 :math:`2.0 - a * x` 。
+
+.. _Newton–Raphson division: https://en.wikipedia.org/wiki/Newton%27s_method#Multiplicative_inverses_of_numbers_and_power_series
+
+.. todo::
+
+    cuda layernorm
 
 
 相关链接

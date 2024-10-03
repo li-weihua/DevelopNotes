@@ -47,10 +47,13 @@ float GetVarNaive(std::vector<float> v) {
 }
 
 inline float32x4_t vdiv(float32x4_t a, float32x4_t b) {
-  float32x4_t recip0 = vrecpeq_f32(b);
-  float32x4_t recip1 = vmulq_f32(recip0, vrecpsq_f32(recip0, b));
+  float32x4_t recip = vrecpeq_f32(b);
 
-  return vmulq_f32(a, recip1);
+  // Use Newton-Raphson iteration two times to improve precision!
+  recip = vmulq_f32(recip, vrecpsq_f32(recip, b));
+  recip = vmulq_f32(recip, vrecpsq_f32(recip, b));
+
+  return vmulq_f32(a, recip);
 }
 
 float GetVarWelford(std::vector<float> v) {

@@ -14,7 +14,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-add_executable(var src/main.cc)
+add_executable(var
+  src/main.cc
+  src/var_scalar.cc
+)
 
 if (ARCH_X86 OR ARCH_X64)
   target_sources(var PRIVATE
@@ -26,6 +29,7 @@ if (ARCH_X86 OR ARCH_X64)
   else()
     set_source_files_properties(var_sse.cc PROPERTIES COMPILE_FLAGS "-msse2")
   endif()
+
 elseif(ARCH_ARM OR ARCH_ARM64)
   target_sources(var PRIVATE
     src/var_neon.cc
