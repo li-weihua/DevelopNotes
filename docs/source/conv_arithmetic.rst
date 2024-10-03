@@ -1,5 +1,5 @@
 convolution arithmetic
-======================
+========================
 
 :reference:
   - https://github.com/vdumoulin/conv_arithmetic

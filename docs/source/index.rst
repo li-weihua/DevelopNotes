@@ -6,13 +6,14 @@ Develop Notes
    :maxdepth: 2
    :caption: Contents:
 
-   reStructuredText
-   cuda/index
-   python/index
-   deeplearning/index
-   nlp
-   conv_arithmetic
+   variance
+   mlas
+   cuda
    backpropagation
+   conv_arithmetic
+   reStructuredText
+   python/index
+   nlp
    floating_point
    env/index
 

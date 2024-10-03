@@ -1,5 +1,5 @@
 方差计算
-================
+============
 
 方差定义（two-pass method）：
 
@@ -15,7 +15,6 @@
 	\begin{aligned}
     \sigma^2_n &= \frac{1}{n} \sum_{i=1}^{n} x_i^2 - \bar{x}_n^2
 	\end{aligned}
-
 
 Welford计算方差
 ----------------
@@ -61,7 +60,7 @@ Welford计算方差是用one-pass method，但误差远小于naive method。
 
 python实现示例如下：
 
-.. literalinclude:: ../../../python/welford.py
+.. literalinclude:: ../../python/welford.py
     :language: python
 
 c++实现示例
