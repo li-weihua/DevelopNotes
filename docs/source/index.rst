@@ -7,6 +7,7 @@ Develop Notes
    :caption: Contents:
 
    variance
+   multi_platform_dev
    mlas
    cuda
    backpropagation
