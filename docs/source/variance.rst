@@ -1,5 +1,6 @@
+************
 方差计算
-============
+************
 
 方差定义（two-pass method）：
 
@@ -17,7 +18,7 @@
 	\end{aligned}
 
 Welford计算方差
-----------------
+==================
 
 Welford计算方差是用one-pass method，但误差远小于naive method。
 
@@ -64,7 +65,7 @@ python实现示例如下：
     :language: python
 
 c++实现示例
--------------
+==================
 
 demo只考虑样本数是4的倍数。
 
@@ -74,7 +75,7 @@ c++实现示例 `WelfordCpp`_， 支持x86 sse和arm neon指令。
 
 
 除法计算和Newton-Raphson iteration
------------------------------------
+========================================
 
 均值递推关系 :eq:`welford_mean_recursive` 需要计算除法 ``1/n``，但除法计算的延迟比较高。
 
@@ -123,7 +124,7 @@ ARM neon实现示例如下：
 
 
 相关链接
----------
+==========
 
 :参考1: https://mp.weixin.qq.com/s/t0x782mDkMo-ZBVEbK8gPg
 :参考2: https://jonisalonen.com/2013/deriving-welfords-method-for-computing-variance/

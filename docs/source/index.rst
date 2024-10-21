@@ -1,13 +1,15 @@
+###############
 Develop Notes
-=================
+###############
 
 .. toctree::
    :numbered:
    :maxdepth: 2
    :caption: Contents:
 
-   variance
    multi_platform_dev
+   operator
+   variance
    mlas
    cuda
    backpropagation
