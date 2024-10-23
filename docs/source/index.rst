@@ -9,17 +9,13 @@ Develop Notes
 
    multi_platform_dev
    operator
-   variance
-   mlas
-   cuda
-   backpropagation
-   conv_arithmetic
+   mathfunctions
+   onnxruntime
+   floating_point_number
    reStructuredText
-   python/index
-   nlp
-   floating_point
-   env/index
-
+   develop_environment
+   cuda
+   deeplearning_others
 
 
 Indices and tables

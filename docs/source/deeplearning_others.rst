@@ -1,3 +1,7 @@
+******************************
+deep learning miscellanies
+******************************
+
 Backpropagation的推导
 =====================
 
@@ -83,3 +87,65 @@ BP算法可以概括为以下四个关系式：
 	  \end{aligned}
 
 可以看出，可以从 :math:`\delta^{l+1}` 的推导出对第 :math:`l` 层的权重和偏移量的偏导，以及第 :math:`l` 层的未激活前的神经元的偏导。
+
+convolution arithmetic
+========================
+
+:reference:
+  - https://github.com/vdumoulin/conv_arithmetic
+  - https://arxiv.org/abs/1603.07285
+
+1. convolution
+--------------
+Set input data size :math:`i`, convolution kernel size :math:`k`, stride size :math:`s`, and zero padding size :math:`p`.
+Then the output size :math:`o` is:
+
+.. math::
+  o = \left\lfloor{\frac{i + 2p - k}{s}}\right\rfloor + 1 \,.
+  :label: conv
+
+The floor function :math:`{\lfloor}\,{\rfloor}` can found at https://en.wikipedia.org/wiki/Floor_and_ceiling_functions.
+
+2. pooling
+----------
+According to :eq:`conv`, pooling output size is:
+
+.. math::
+  o = \left\lfloor{\frac{i-k}{s}}\right\rfloor + 1 \,.
+  :label: pooling
+
+3. tansposed convolution
+------------------------
+
+:explanation:
+  The convolution operation can be rewritten to matrix multiplication.
+
+
+4. dilated convolution
+-----------------------
+The dilation "rate" is controlled by an additional hyperparameter :math:`d`. A kernel
+of size k dilated by a factor d has an effective size:
+
+.. math::
+  \hat{k} = k + (k-1)(d-1) \,.
+
+Combined with :eq:`conv` the output size is:
+
+.. math::
+  o = \left\lfloor{\frac{i + 2p - k - (k-1)(d-1)}{s}}\right\rfloor + 1 \,.
+  :label: dilatedconv
+
+NLP
+=====
+
+encoder-decoder model architecture:
+
+* **Encoder-only models**: Good for tasks that require understanding of the input, such as sentence classification and named entity recognition.
+* **Decoder-only models**: Good for generative tasks such as text generation.
+* **Encoder-decoder models** or **sequence-to-sequence models**: Good for generative tasks that require an input, such as translation or summarization.
+
+Decoding Methods
+******************
+
+There are mainly tree decoding methods: ``Greedy search``, ``Beam search``, and ``Sampling``.
+

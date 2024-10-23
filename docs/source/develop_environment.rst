@@ -1,3 +1,118 @@
+**********************
+Develop Environment
+**********************
+
+Centos7
+=========
+
+How to install higher version gcc on centos7 docker?
+-------------------------------------------------------
+
+Ref: https://stackoverflow.com/questions/67090507/how-to-install-gcc-g-9-on-centos-7-docker-centos7
+
+.. code-block:: dockerfile
+
+    FROM centos:7 AS env
+
+    RUN yum update -y && \
+        yum install -y centos-release-scl && \
+        yum install -y devtoolset-9 && \
+        echo "source /opt/rh/devtoolset-9/enable" >> /etc/bashrc
+
+
+CMAKE
+=======
+
+cudatoolkit version and supported gpus
+----------------------------------------
+
+
+How to get the version of library found by CMake?
+--------------------------------------------------
+
+Ref: https://stackoverflow.com/questions/34138886/how-to-know-version-of-library-found-by-cmake
+
+``<package>_VERSION``
+
+
+How to build x86 or x64 on Windows from command line with CMAKE?
+--------------------------------------------------------------------
+
+Ref: https://stackoverflow.com/questions/28350214/how-to-build-x86-and-or-x64-on-windows-from-command-line-with-cmake
+
+.. code-block:: bash
+
+    cmake -G "Visual Studio 17 2022" -A Win32 -S .. -B "build32"
+    cmake -G "Visual Studio 17 2022" -A x64 -S .. -B "build64"
+    cmake --build build32 --config Release
+    cmake --build build64 --config Release
+
+
+For simplicity, only build 64bit version:
+
+.. code-block:: bash
+
+    cmake .. -A x64
+    cmake --build . --config Release
+
+
+Conda
+=======
+
+conda命令补全
+--------------
+
+参考： https://github.com/tartansandal/conda-bash-completion
+
+采用方法2直接把 https://github.com/tartansandal/conda-bash-completion/blob/master/conda 下载到bash补全目录
+
+Docker
+========
+
+Manage Docker as a non-root user
+------------------------------------
+
+reference: https://docs.docker.com/engine/install/linux-postinstall/
+
+1. If ``docker`` group does not exit:
+
+.. code-block:: bash
+
+    sudo groupadd docker
+
+2. Add your user to the ``docker`` group:
+
+.. code-block:: bash
+
+    sudo usermod -aG docker $USER
+
+3. To activate the changes to groups:
+
+.. code-block:: bash
+
+    newgrp docker
+
+
+manylinux
+===========
+
+centos7, glibc version 2.17
+
+git
+=====
+
+在 HTTPS 端口使用 SSH
+-----------------------
+参考：https://docs.github.com/zh/authentication/troubleshooting-ssh/using-ssh-over-the-https-port
+
+.. code-block::
+
+    Host github.com
+        Hostname ssh.github.com
+        Port 443
+        User git
+
+
 Homebrew
 ==========
 
