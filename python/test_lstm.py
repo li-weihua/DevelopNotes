@@ -14,9 +14,12 @@ hidden_size = 20
 num_layers = 5
 
 
-rnn = nn.LSTM(input_size, hidden_size, num_layers, batch_first=False, bidirectional=False)
+rnn = nn.LSTM(
+    input_size, hidden_size, num_layers, batch_first=False, bidirectional=False
+)
 
-mylstm = MyLSTM(input_size, hidden_size, num_layers, rnn.state_dict())
+mylstm = MyLSTM(input_size, hidden_size, num_layers)
+mylstm.set_weights(rnn.state_dict())
 
 
 x = torch.randn(seq_len, batch_size, input_size)

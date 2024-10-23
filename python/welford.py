@@ -3,7 +3,9 @@ from typing import Tuple
 import numpy as np
 
 
-def welford_online_update(x: float, count: int, s: float, a: float) -> Tuple[float, float]:
+def welford_online_update(
+    x: float, count: int, s: float, a: float
+) -> Tuple[float, float]:
     """
     a: average of x_i
     s: M_{2,n}
