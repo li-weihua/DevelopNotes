@@ -17,6 +17,19 @@ iOS
 -----
 https://onnxruntime.ai/docs/install/#install-on-ios
 
+``Podfile`` add
+
+.. code::
+
+  use_frameworks!
+
+  pod 'onnxruntime-c'
+
+
+Another ref: https://github.com/CocoaPods/Specs/tree/master/Specs/3/a/a/onnxruntime-c
+
+e.g. 1.20.0: https://download.onnxruntime.ai/pod-archive-onnxruntime-c-1.20.0.zip
+
 
 MLAS
 =======
