@@ -2,6 +2,22 @@
 onnnxruntime
 *************
 
+Pre-build packages
+====================
+
+PC or server
+-------------
+https://github.com/microsoft/onnxruntime/releases
+
+Android
+---------
+https://mvnrepository.com/artifact/com.microsoft.onnxruntime/onnxruntime-android
+
+iOS
+-----
+https://onnxruntime.ai/docs/install/#install-on-ios
+
+
 MLAS
 =======
 
