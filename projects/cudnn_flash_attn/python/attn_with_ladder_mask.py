@@ -1,6 +1,7 @@
+import math
+
 import cudnn
 import torch
-import math
 
 torch.set_grad_enabled(False)
 torch.manual_seed(42)
@@ -23,7 +24,7 @@ def gen_ladder_mask(total_len, text_len, chunk_size):
             is_mask_elem = False
 
             if row < text_len and col >= text_len:
-                    is_mask_elem = True
+                is_mask_elem = True
 
             if row >= text_len and col >= text_len:
                 row_a = row - text_len
@@ -37,13 +38,14 @@ def gen_ladder_mask(total_len, text_len, chunk_size):
 
     return mask.bool()
 
+
 text_len = 142
 chunk_size = 32
-max_s = 2048     # max sequence length
-b = 2            # batch size
-h = 16           # query number of heads
-s = 622          # real sequence length
-d = 64           # embedding dimension per head
+max_s = 2048  # max sequence length
+b = 2  # batch size
+h = 16  # query number of heads
+s = 622  # real sequence length
+d = 64  # embedding dimension per head
 
 assert (s - text_len) % chunk_size == 0
 
@@ -61,16 +63,26 @@ q_gpu = torch.randn(b * s * h * d).half().cuda().as_strided(dims, strides)
 o_gpu = torch.empty(b * s * h * d).half().cuda().as_strided(dims, strides)
 
 cache_dims = (b, h, max_s, d)
-cache_strides = (max_s* h * d, d, h * d, 1)
+cache_strides = (max_s * h * d, d, h * d, 1)
 
-k_cache_gpu = torch.randn(b * max_s * h * d).half().cuda().as_strided(cache_dims, cache_strides)
-v_cache_gpu = torch.randn(b * max_s * h * d).half().cuda().as_strided(cache_dims, cache_strides)
+k_cache_gpu = (
+    torch.randn(b * max_s * h * d)
+    .half()
+    .cuda()
+    .as_strided(cache_dims, cache_strides)
+)
+v_cache_gpu = (
+    torch.randn(b * max_s * h * d)
+    .half()
+    .cuda()
+    .as_strided(cache_dims, cache_strides)
+)
 
-k_cache_gpu[:,:,s:,:] = 0
-v_cache_gpu[:,:,s:,:] = 0
+k_cache_gpu[:, :, s:, :] = 0
+v_cache_gpu[:, :, s:, :] = 0
 
-k_gpu = k_cache_gpu[:, :, 0:s, :].as_strided(dims, strides)
-v_gpu = v_cache_gpu[:, :, 0:s, :].as_strided(dims, strides)
+k_gpu = k_cache_gpu[:, :, 0:s, :].as_strided(dims, cache_strides)
+v_gpu = v_cache_gpu[:, :, 0:s, :].as_strided(dims, cache_strides)
 
 # bias_gpu is ladder mask!
 bias_gpu = torch.zeros(b, h, s, s, dtype=q_gpu.dtype, device=q_gpu.device)
@@ -122,10 +134,10 @@ graph.execute(variant_pack, workspace)
 torch.cuda.synchronize()
 
 # check results
-q_ref = q_gpu.detach()
-k_ref = k_gpu.detach()
-v_ref = v_gpu.detach()
-bias_ref = bias_gpu.detach()
+q_ref = q_gpu.clone().contiguous()
+k_ref = k_gpu.clone().contiguous()
+v_ref = v_gpu.clone().contiguous()
+bias_ref = bias_gpu.clone().contiguous()
 
 o_ref = torch.nn.functional.scaled_dot_product_attention(
     q_ref, k_ref, v_ref, attn_mask=bias_ref, scale=attn_scale
@@ -145,11 +157,14 @@ n = 10
 
 for i in range(n):
     start.record()
-    o_ref = torch.nn.functional.scaled_dot_product_attention(q_ref, k_ref, v_ref, attn_mask=bias_ref, scale=attn_scale)
+    o_ref = torch.nn.functional.scaled_dot_product_attention(
+        q_ref, k_ref, v_ref, attn_mask=bias_ref, scale=attn_scale
+    )
     end1.record()
     graph.execute(variant_pack, workspace)
     end2.record()
     end2.synchronize()
 
-    print(f"Iter(μs) {i}: {start.elapsed_time(end1)*1000:.1f}, {end1.elapsed_time(end2)*1000:.1f}")
-
+    print(
+        f"Iter(μs) {i}: {start.elapsed_time(end1)*1000:.1f}, {end1.elapsed_time(end2)*1000:.1f}"
+    )
