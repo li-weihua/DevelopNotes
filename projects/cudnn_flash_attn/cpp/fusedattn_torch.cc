@@ -9,13 +9,14 @@ namespace fe = cudnn_frontend;
 
 class TorchCudnnFlashAttention : public torch::CustomClassHolder {
  public:
-  TorchCudnnFlashAttention(int64_t batch, int64_t num_head, int64_t head_dim,
-                           int64_t seq_q, int64_t seq_kv, int64_t stride_qb,
-                           int64_t stride_qs, int64_t stride_qh, int64_t stride_kb,
-                           int64_t stride_ks, int64_t stride_kh, int64_t stride_vb,
-                           int64_t stride_vs, int64_t stride_vh, int64_t stride_ob,
-                           int64_t stride_os, int64_t stride_oh, double attn_scale,
-                           bool is_fp16, bool is_causal, bool has_bias) {
+  TorchCudnnFlashAttention(
+      int64_t batch, int64_t num_head, int64_t head_dim,        //
+      int64_t seq_q, int64_t seq_kv,                            // seq
+      int64_t stride_qb, int64_t stride_qs, int64_t stride_qh,  // q strides
+      int64_t stride_kb, int64_t stride_ks, int64_t stride_kh,  // k strides
+      int64_t stride_vb, int64_t stride_vs, int64_t stride_vh,  // v strides
+      int64_t stride_ob, int64_t stride_os, int64_t stride_oh,  // o strides
+      double attn_scale, bool is_fp16, bool is_causal, bool has_bias) {
     auto handle = at::native::getCudnnHandle();
 
     cudnn_attn_ = std::make_unique<CudnnFlashAttention>(
