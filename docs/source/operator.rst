@@ -2,6 +2,12 @@
 deep learning operators
 *************************
 
+flash attention
+=================
+
+transformer decoder k/v cache
+===============================
+
 
 LSTM
 =======
@@ -141,8 +147,3 @@ ARM neon实现示例如下：
 
 :参考1: https://mp.weixin.qq.com/s/t0x782mDkMo-ZBVEbK8gPg
 :参考2: https://jonisalonen.com/2013/deriving-welfords-method-for-computing-variance/
-
-
-
-transformer decoder k/v cache
-===============================
