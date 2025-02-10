@@ -97,8 +97,8 @@ where :math:`W^{O} \in \mathbb{R}^{d_h n_h \times d}` denotes the output project
     \begin{align}
     q_i k_i^T &= \boxed{\mathbf{c}^{Q} W^{UQ}_i} \; \boxed{(\mathbf{c}^{KV} W^{UK}_i)^T}, \\
               &= \boxed{\mathbf{c}^{Q} W^{UQ}_i (W^{UK}_i)^T} (\mathbf{c}^{KV})^T, & \\
-              &= \boxed{q_i (W^{UK}_i)^T} (\mathbf{c}^{KV})^T,  & \boxed{\textrm{Decode}} \\
-              &= q_i \boxed{(\mathbf{c}^{KV} W^{UK}_i)^T},  & \boxed{\textrm{Prefill}} \\
+              &= \boxed{q_i (W^{UK}_i)^T} (\mathbf{c}^{KV})^T,  & \boxed{\textrm{Absorb}} \\
+              &= q_i \boxed{(\mathbf{c}^{KV} W^{UK}_i)^T},  & \boxed{\textrm{Normal}} \\
     \end{align}
 
 
@@ -125,24 +125,25 @@ where :math:`W^{O} \in \mathbb{R}^{d_h n_h \times d}` denotes the output project
 
 .. math::
     \begin{align*}
-    T_{\textrm{prefill}} &= 2 b s_{kv} d_c d_h n_h + 2 b n_h s_q s_{kv} d_h = 2 b n_h d_h (d_c s_q + s_q s_{kv}), \\
-    T_{\textrm{decode}} &= 2 b s_q d_c d_h n_h + 2 b n_h s_q s_{kv} d_c = 2 b n_h d_c (d_h s_q + s_q s_{kv}), \\
+    T_{\textrm{Normal}} &= 2 b s_{kv} d_c d_h n_h + 2 b n_h s_q s_{kv} d_h = 2 b n_h d_h (d_c s_{kv} + s_q s_{kv}), \\
+    T_{\textrm{Absorb}} &= 2 b s_q d_c d_h n_h + 2 b n_h s_q s_{kv} d_c = 2 b n_h d_c (d_h s_q + s_q s_{kv}), \\
     \end{align*}
 
 Prefill阶段 :math:`s_q = s_{kv} = s`，
 
 .. math::
-    \frac{T_{\textrm{prefill}}}{T_{\textrm{decode}}} = \frac{ 2 b n_h d_h (d_c + s) s}{2 b n_h d_c (d_h + s) s} \approx \frac{d_h}{d_c} = \frac{1}{4}
+    \frac{T_{\textrm{Normal}}}{T_{\textrm{Absorb}}} = \frac{ 2 b n_h d_h (d_c + s) s}{2 b n_h d_c (d_h + s) s} \approx \frac{d_h}{d_c} = \frac{1}{4}
 
 
 Decode阶段 :math:`s_q = 1, s_{kv} = s`，
 
 .. math::
-    \frac{T_{\textrm{prefill}}}{T_{\textrm{decode}}} = \frac{ 2 b n_h d_h (d_c + s)}{2 b n_h d_c (d_h + s)} \approx \frac{d_h}{d_c} = \frac{1}{4}
+    \frac{T_{\textrm{Normal}}}{T_{\textrm{Absorb}}} = \frac{ 2 b n_h d_h (d_c s + s)}{2 b n_h d_c (d_h + s)} = \frac{d_h (d_c + 1) s}{d_c (d_h + s)}
+    \approx d_h
 
-单纯计算量上看，naive的计算方式比较小。由于prefill阶段是 ``计算瓶颈``，所以采用公式(15)计算。
+从计算量上看，**prefill** 阶段 ``Normal`` 的计算量比较小，且由于 **prefill** 阶段是 ``计算瓶颈``，所以采用公式(15)或者(12)计算，即 **显式的计算出q和k**。
 
-但是decode阶段的瓶颈是 ``显存带宽``，矩阵运算是 :math:`(b, n_h, 1, d_c) \times (b, 1, s, d_c)`，假定为bfloat16精度，读取的memory为
+而 **decode** 阶段 ``absorb`` 方式的计算量小，且瓶颈是 ``显存带宽``，矩阵运算是 :math:`(b, n_h, 1, d_c) \times (b, 1, s, d_c)`，假定为bfloat16精度，读取的memory为
 
 .. math::
     M_{\textrm{MLA}} = 2 b n_h d_c + 2 b s d_c = 2 b d_c (n_h + s).
@@ -157,4 +158,4 @@ Decode阶段 :math:`s_q = 1, s_{kv} = s`，
 .. math::
     \frac{M_{\textrm{MLA}}}{M_{\textrm{MHA}}} = \frac{2 b d_c (n_h + s)}{2 b d_h n_h (1 + s)} = \frac{128 + s}{ 32 (1 + s)} \approx \frac{1}{32}.
 
-所以Decode阶段采用了MQA (Multi-Query Attention) 来计算。
+所以Decode阶段采用了 ``absorb`` 方式计算，并可以复用MQA (Multi-Query Attention) 的实现。
