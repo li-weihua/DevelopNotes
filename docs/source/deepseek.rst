@@ -94,18 +94,19 @@ where :math:`W^{O} \in \mathbb{R}^{d_h n_h \times d}` denotes the output project
 先不考虑RoPE部分，只考虑从 :math:`\mathbf{c}^Q` 和 :math:`\mathbf{c}^{KV}` 计算 :math:`\mathbf{q}_i \mathbf{k}_i^T` (i表示i-th head)
 
 .. math::
-    \begin{align}
+    \begin{align*}
     q_i k_i^T &= \boxed{\mathbf{c}^{Q} W^{UQ}_i} \; \boxed{(\mathbf{c}^{KV} W^{UK}_i)^T}, \\
               &= \boxed{\mathbf{c}^{Q} W^{UQ}_i (W^{UK}_i)^T} (\mathbf{c}^{KV})^T, & \\
               &= \boxed{q_i (W^{UK}_i)^T} (\mathbf{c}^{KV})^T,  & \boxed{\textrm{Absorb}} \\
               &= q_i \boxed{(\mathbf{c}^{KV} W^{UK}_i)^T},  & \boxed{\textrm{Normal}} \\
-    \end{align}
+    \end{align*}
 
 
 为什么计算的时候不把 :math:`W^{UQ}_i  (W^{UK}_i)^T` 合并起来？
 ------------------------------------------------------------
 
-可以简单的计算出来对于单个token，单个head所需要的flops分别为： :math:`2 d_h (d_c^{\prime} + d_c) = 524288` , :math:`2 d_c^{\prime} d_c = 1572864 = 3 * 524288` ,
+可以简单的计算出来对于单个token，单个head所需要的flops分别为： :math:`2 d_h (d_c^{\prime} + d_c) = 524288` ,
+:math:`2 d_c^{\prime} d_c = 1572864 = 3 * 524288` ,
 合并后计算量反而是原来的3倍！
 
 
@@ -121,7 +122,7 @@ where :math:`W^{O} \in \mathbb{R}^{d_h n_h \times d}` denotes the output project
     W^{UK} &: (d_c, n_h d_h) \\
     \end{align*}
 
-可以计算出公式(15)和公式(14)计算出的flops分别如下：
+可以计算出 ``Normal`` 和 ``Absorb`` 计算出的flops分别如下：
 
 .. math::
     \begin{align*}
@@ -129,21 +130,21 @@ where :math:`W^{O} \in \mathbb{R}^{d_h n_h \times d}` denotes the output project
     T_{\textrm{Absorb}} &= 2 b s_q d_c d_h n_h + 2 b n_h s_q s_{kv} d_c = 2 b n_h d_c (d_h s_q + s_q s_{kv}), \\
     \end{align*}
 
-Prefill阶段 :math:`s_q = s_{kv} = s`，
+**Prefill** 阶段 :math:`s_q = s_{kv} = s`，
 
 .. math::
     \frac{T_{\textrm{Normal}}}{T_{\textrm{Absorb}}} = \frac{ 2 b n_h d_h (d_c + s) s}{2 b n_h d_c (d_h + s) s} \approx \frac{d_h}{d_c} = \frac{1}{4}
 
 
-Decode阶段 :math:`s_q = 1, s_{kv} = s`，
+**Decode** 阶段 :math:`s_q = 1, s_{kv} = s`，
 
 .. math::
     \frac{T_{\textrm{Normal}}}{T_{\textrm{Absorb}}} = \frac{ 2 b n_h d_h (d_c s + s)}{2 b n_h d_c (d_h + s)} = \frac{d_h (d_c + 1) s}{d_c (d_h + s)}
     \approx d_h
 
-从计算量上看，**prefill** 阶段 ``Normal`` 的计算量比较小，且由于 **prefill** 阶段是 ``计算瓶颈``，所以采用公式(15)或者(12)计算，即 **显式的计算出q和k**。
+从计算量上看，**Prefill** 阶段 ``Normal`` 的计算量比较小，且由于 **Prefill** 阶段是 ``计算瓶颈``，所以采用公式(15)或者(12)计算，即 **显式的计算出q和k**。
 
-而 **decode** 阶段 ``absorb`` 方式的计算量小，且瓶颈是 ``显存带宽``，矩阵运算是 :math:`(b, n_h, 1, d_c) \times (b, 1, s, d_c)`，假定为bfloat16精度，读取的memory为
+而 **Decode** 阶段 ``Absorb`` 方式的计算量小，且瓶颈是 ``显存带宽``，矩阵运算是 :math:`(b, n_h, 1, d_c) \times (b, 1, s, d_c)`，假定为bfloat16精度，读取的memory为
 
 .. math::
     M_{\textrm{MLA}} = 2 b n_h d_c + 2 b s d_c = 2 b d_c (n_h + s).
@@ -158,4 +159,4 @@ Decode阶段 :math:`s_q = 1, s_{kv} = s`，
 .. math::
     \frac{M_{\textrm{MLA}}}{M_{\textrm{MHA}}} = \frac{2 b d_c (n_h + s)}{2 b d_h n_h (1 + s)} = \frac{128 + s}{ 32 (1 + s)} \approx \frac{1}{32}.
 
-所以Decode阶段采用了 ``absorb`` 方式计算，并可以复用MQA (Multi-Query Attention) 的实现。
+所以 **Decode** 阶段采用了 ``Absorb`` 方式计算，并可以复用MQA (Multi-Query Attention) 的实现。
