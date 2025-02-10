@@ -7,6 +7,7 @@ Develop Notes
    :maxdepth: 2
    :caption: Contents:
 
+   deepseek
    multi_platform_dev
    operator
    mathfunctions

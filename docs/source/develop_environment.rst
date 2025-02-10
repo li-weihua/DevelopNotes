@@ -56,6 +56,30 @@ For simplicity, only build 64bit version:
     cmake --build . --config Release
 
 
+ld: warning: missing .note.GNU-stack section implies executable stack
+----------------------------------------------------------------------------
+
+This is a new warning message introduced by GNU bin-utils version 2.39.
+
+出现“ld missing .note.GNU-stack section implies executable stack”的错误提示，
+通常是因为在链接过程中，某些对象文件缺少.note.GNU-stack节，导致链接器默认认为可能需要一个可执行的栈。
+这在现代操作系统中是不推荐的做法，因为可执行的栈可能会导致安全问题，如缓冲区溢出攻击。
+
+需要在汇编码中加入：
+
+``.section    .note.GNU-stack,"",@progbits``
+
+或者编译选项：
+
+
+.. code-block:: cmake
+
+    if(UNIX)
+        set_property(TARGET target APPEND_STRING PROPERTY LINK_FLAGS "-z noexecstack")
+    endif()
+
+
+
 Conda
 =======
 
