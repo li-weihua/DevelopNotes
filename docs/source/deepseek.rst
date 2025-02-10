@@ -80,8 +80,8 @@ where :math:`W^{O} \in \mathbb{R}^{d_h n_h \times d}` denotes the output project
 .. math::
     Y = X A B, \; C = A B
 
-其中 :math:`A \in \mathbb{R}^{d \times d_c}` 和 :math:`B \in \mathbb{R}^{d_c \times n}` 是权重矩阵, :math:`X\in \mathbb{R}^{m\times d}` 是输入hidden states.
-直接计算的flops为：
+其中 :math:`X\in \mathbb{R}^{m\times d}` 是输入hidden states, :math:`A \in \mathbb{R}^{d \times d_c}` 和 :math:`B \in \mathbb{R}^{d_c \times n}` 是权重矩阵,
+:math:`C\in \mathbb{R}^{d \times n}` 是合并后的等效权重矩阵， 直接计算的flops为：
 
 .. math::
     2 m d d_c + 2 m n d_c = 2 m d_c (d + n)
@@ -91,19 +91,11 @@ where :math:`W^{O} \in \mathbb{R}^{d_h n_h \times d}` denotes the output project
 当 :math:`d_c` 相对较小时，通常导致 :math:`\boxed{d n \gt d_c (d + n)}`，所以不一定要合并两个权重矩阵！
 
 
-先不考虑RoPE部分，只考虑从 :math:`\mathbf{c}_t^Q` 和 :math:`\mathbf{c}_t^{KV}` 出发计算 :math:`\mathbf{q}_t^T \mathbf{k}`.
+先不考虑RoPE部分，只考虑从 :math:`\mathbf{c}^Q` 和 :math:`\mathbf{c}^{KV}` 计算 :math:`\mathbf{q} \mathbf{k}^T`
 
 .. math::
-    \begin{align*}
-    q_t^T k_j &= (W^{UQ} \mathbf{c}_{t}^{Q})^T W^{UK} \mathbf{c}_{t}^{KV} \\
-              &= (\mathbf{c}_{t}^{Q})^T (W^{UQ})^T W^{UK} \mathbf{c}_{t}^{KV}, \\
-    W^{QK} & = (W^{UQ})^T W^{UK} \in \mathbb{R}^{d_c^{\prime} \times d_c}.
-    \end{align*}
-
-
-比较两种计算量：
-
-1. naive计算
-
-
-2. absorb计算
+    \begin{align}
+    q k^T &= \mathbf{c}^{Q} W^{UQ} (\mathbf{c}^{KV} W^{UK})^T \\
+              &= \boxed{\mathbf{c}^{Q} W^{UQ} (W^{UK})^T} (\mathbf{c}^{KV})^T, \\
+              &= \boxed{q^{nope} (W^{UK})^T} (\mathbf{c}^{KV})^T, \\
+    \end{align}
