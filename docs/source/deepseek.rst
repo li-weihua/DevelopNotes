@@ -73,7 +73,7 @@ where :math:`W^{O} \in \mathbb{R}^{d_h n_h \times d}` denotes the output project
 
 
 矩阵吸收absorb
-------------------
+=================
 
 首先考虑如下计算：
 
@@ -81,7 +81,7 @@ where :math:`W^{O} \in \mathbb{R}^{d_h n_h \times d}` denotes the output project
     Y = X A B, \; C = A B
 
 其中 :math:`X\in \mathbb{R}^{m\times d}` 是输入hidden states, :math:`A \in \mathbb{R}^{d \times d_c}` 和 :math:`B \in \mathbb{R}^{d_c \times n}` 是权重矩阵,
-:math:`C\in \mathbb{R}^{d \times n}` 是合并后的等效权重矩阵， 直接计算的flops为：
+:math:`C\in \mathbb{R}^{d \times n}` 是absorb后的等效权重矩阵， 直接计算的flops为：
 
 .. math::
     2 m d d_c + 2 m n d_c = 2 m d_c (d + n)
@@ -91,11 +91,70 @@ where :math:`W^{O} \in \mathbb{R}^{d_h n_h \times d}` denotes the output project
 当 :math:`d_c` 相对较小时，通常导致 :math:`\boxed{d n \gt d_c (d + n)}`，所以不一定要合并两个权重矩阵！
 
 
-先不考虑RoPE部分，只考虑从 :math:`\mathbf{c}^Q` 和 :math:`\mathbf{c}^{KV}` 计算 :math:`\mathbf{q} \mathbf{k}^T`
+先不考虑RoPE部分，只考虑从 :math:`\mathbf{c}^Q` 和 :math:`\mathbf{c}^{KV}` 计算 :math:`\mathbf{q}_i \mathbf{k}_i^T` (i表示i-th head)
 
 .. math::
     \begin{align}
-    q k^T &= \mathbf{c}^{Q} W^{UQ} (\mathbf{c}^{KV} W^{UK})^T \\
-              &= \boxed{\mathbf{c}^{Q} W^{UQ} (W^{UK})^T} (\mathbf{c}^{KV})^T, \\
-              &= \boxed{q^{nope} (W^{UK})^T} (\mathbf{c}^{KV})^T, \\
+    q_i k_i^T &= \boxed{\mathbf{c}^{Q} W^{UQ}_i} \; \boxed{(\mathbf{c}^{KV} W^{UK}_i)^T}, \\
+              &= \boxed{\mathbf{c}^{Q} W^{UQ}_i (W^{UK}_i)^T} (\mathbf{c}^{KV})^T, & \\
+              &= \boxed{q_i (W^{UK}_i)^T} (\mathbf{c}^{KV})^T,  & \boxed{\textrm{Decode}} \\
+              &= q_i \boxed{(\mathbf{c}^{KV} W^{UK}_i)^T},  & \boxed{\textrm{Prefill}} \\
     \end{align}
+
+
+为什么计算的时候不把 :math:`W^{UQ}_i  (W^{UK}_i)^T` 合并起来？
+------------------------------------------------------------
+
+可以简单的计算出来对于单个token，单个head所需要的flops分别为： :math:`2 d_h (d_c^{\prime} + d_c) = 524288` , :math:`2 d_c^{\prime} d_c = 1572864 = 3 * 524288` ,
+合并后计算量反而是原来的3倍！
+
+
+为什么prefill阶段明确计算出k和v，而decode阶段不需要？
+----------------------------------------------------
+
+假定输入shape如下：
+
+.. math::
+    \begin{align*}
+    \mathbf{q} &: (b, n_h, s_q, d_h) \\
+    \mathbf{c}^{KV} &: (b, 1, s_{kv}, d_c) \\
+    W^{UK} &: (d_c, n_h d_h) \\
+    \end{align*}
+
+可以计算出公式(15)和公式(14)计算出的flops分别如下：
+
+.. math::
+    \begin{align*}
+    T_{\textrm{prefill}} &= 2 b s_{kv} d_c d_h n_h + 2 b n_h s_q s_{kv} d_h = 2 b n_h d_h (d_c s_q + s_q s_{kv}), \\
+    T_{\textrm{decode}} &= 2 b s_q d_c d_h n_h + 2 b n_h s_q s_{kv} d_c = 2 b n_h d_c (d_h s_q + s_q s_{kv}), \\
+    \end{align*}
+
+Prefill阶段 :math:`s_q = s_{kv} = s`，
+
+.. math::
+    \frac{T_{\textrm{prefill}}}{T_{\textrm{decode}}} = \frac{ 2 b n_h d_h (d_c + s) s}{2 b n_h d_c (d_h + s) s} \approx \frac{d_h}{d_c} = \frac{1}{4}
+
+
+Decode阶段 :math:`s_q = 1, s_{kv} = s`，
+
+.. math::
+    \frac{T_{\textrm{prefill}}}{T_{\textrm{decode}}} = \frac{ 2 b n_h d_h (d_c + s)}{2 b n_h d_c (d_h + s)} \approx \frac{d_h}{d_c} = \frac{1}{4}
+
+单纯计算量上看，naive的计算方式比较小。由于prefill阶段是 ``计算瓶颈``，所以采用公式(15)计算。
+
+但是decode阶段的瓶颈是 ``显存带宽``，矩阵运算是 :math:`(b, n_h, 1, d_c) \times (b, 1, s, d_c)`，假定为bfloat16精度，读取的memory为
+
+.. math::
+    M_{\textrm{MLA}} = 2 b n_h d_c + 2 b s d_c = 2 b d_c (n_h + s).
+
+而标准的MHA :math:`(b, n_h, 1, d_h)\times (b, n_h, s, d_h)` 的内存读取量为：
+
+.. math::
+    M_{\textrm{MHA}} = 2 b n_h d_h + 2 b n_h s d_h = 2 b d_h n_h (1 + s).
+
+内存读取比例为：
+
+.. math::
+    \frac{M_{\textrm{MLA}}}{M_{\textrm{MHA}}} = \frac{2 b d_c (n_h + s)}{2 b d_h n_h (1 + s)} = \frac{128 + s}{ 32 (1 + s)} \approx \frac{1}{32}.
+
+所以Decode阶段采用了MQA (Multi-Query Attention) 来计算。
