@@ -101,6 +101,10 @@ where :math:`W^{O} \in \mathbb{R}^{d_h n_h \times d}` denotes the output project
               &= q_i \boxed{(\mathbf{c}^{KV} W^{UK}_i)^T},  & \boxed{\textrm{Normal}} \\
     \end{align*}
 
+.. warning::
+
+    ``Absorb`` 在这的真实含义是矩阵乘法结合律，优先结合 :math:`\mathbf{q}` 和 :math:`W^{UK}`，并缓存 compressed latent vector :math:`\mathbf{c}^{KV}`， 并不是合并权重矩阵，用 ``Absorb`` 命名有一定误导性！
+
 
 为什么计算的时候不把 :math:`W^{UQ}_i  (W^{UK}_i)^T` 合并起来？
 ------------------------------------------------------------
@@ -154,7 +158,9 @@ where :math:`W^{O} \in \mathbb{R}^{d_h n_h \times d}` denotes the output project
 
 从计算量上看，**Prefill** 阶段 ``Normal`` 的计算量比较小，且由于 **Prefill** 阶段是 ``计算瓶颈``，所以 **显式的计算出q和k**。
 
-而 **Decode** 阶段，缓存k cache的时候计算量最小（但会导致kv cache很大）， 极限情况是1/4的 ``Absort`` 的计算量，但由于 **Decode** 瓶颈是 ``显存带宽``。
+而 **Decode** 阶段，缓存k cache的时候计算量最小（但会导致kv cache很大）， 极限情况是1/4的 ``Absort`` 的计算量，但 **Decode** 瓶颈是 ``显存带宽``。
+下面看下两种方式的内存读取量：
+
 ``Absort`` 方式的矩阵运算是 :math:`(b, n_h, 1, d_c) \times (b, 1, s, d_c)`，假定为bfloat16精度，读取的memory为
 
 .. math::
@@ -170,13 +176,13 @@ where :math:`W^{O} \in \mathbb{R}^{d_h n_h \times d}` denotes the output project
 .. math::
     \frac{M_{\textrm{MLA}}}{M_{\textrm{MHA}}} = \frac{2 b d_c (n_h + s)}{2 b d_h n_h (1 + s)} = \frac{128 + s}{ 32 (1 + s)}.
 
-当 :math:`s \ge 20`，访存比值为0.22，极限情况为1/32。所以 **Decode** 阶段采用了 ``Absorb`` 方式计算，并可以复用MQA (Multi-Query Attention) 的实现。
+当 :math:`s = 20`，访存比值为0.22，极限情况为1/32。所以 **Decode** 阶段采用了 ``Absorb`` 方式计算，并可以复用MQA (Multi-Query Attention) 的实现。
 
 
 矩阵吸收问题总结
 ---------------
 
-矩阵吸收的数学问题为矩阵结合律应该怎么用
+矩阵吸收的数学问题为 ``矩阵乘法结合律`` 该怎么用
 
 .. math::
     \begin{align*}
