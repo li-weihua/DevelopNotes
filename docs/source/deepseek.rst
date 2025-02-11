@@ -160,3 +160,17 @@ where :math:`W^{O} \in \mathbb{R}^{d_h n_h \times d}` denotes the output project
     \frac{M_{\textrm{MLA}}}{M_{\textrm{MHA}}} = \frac{2 b d_c (n_h + s)}{2 b d_h n_h (1 + s)} = \frac{128 + s}{ 32 (1 + s)} \approx \frac{1}{32}.
 
 所以 **Decode** 阶段采用了 ``Absorb`` 方式计算，并可以复用MQA (Multi-Query Attention) 的实现。
+
+
+矩阵吸收问题总结
+---------------
+
+矩阵吸收的数学问题为矩阵结合律应该怎么用
+
+.. math::
+    \begin{align*}
+    Y &= (X A) B = X (A B), \\
+    Z &= (X W) Y = X (W Y),
+    \end{align*}
+
+其中，A, B, W都是权重。需要权衡计算量，memory读写量和瓶颈，可以套用典型的Roofline Model进行分析。
