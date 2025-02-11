@@ -122,29 +122,40 @@ where :math:`W^{O} \in \mathbb{R}^{d_h n_h \times d}` denotes the output project
     W^{UK} &: (d_c, n_h d_h) \\
     \end{align*}
 
-可以计算出 ``Normal`` 和 ``Absorb`` 计算出的flops分别如下：
+
+**Prefill** 阶段 :math:`s_q = s_{kv} = s`， 可以计算出 ``Normal`` 和 ``Absorb`` 计算出的flops分别如下：
 
 .. math::
     \begin{align*}
-    T_{\textrm{Normal}} &= 2 b s_{kv} d_c d_h n_h + 2 b n_h s_q s_{kv} d_h = 2 b n_h d_h (d_c s_{kv} + s_q s_{kv}), \\
-    T_{\textrm{Absorb}} &= 2 b s_q d_c d_h n_h + 2 b n_h s_q s_{kv} d_c = 2 b n_h d_c (d_h s_q + s_q s_{kv}), \\
+    T_{\textrm{Normal}} &= 2 b s d_c d_h n_h + 2 b n_h s s d_h = 2 b n_h d_h s (d_c + s), \\
+    T_{\textrm{Absorb}} &= 2 b s d_c d_h n_h + 2 b n_h s s d_c = 2 b n_h d_c s (d_h + s), \\
     \end{align*}
 
-**Prefill** 阶段 :math:`s_q = s_{kv} = s`，
-
 .. math::
-    \frac{T_{\textrm{Normal}}}{T_{\textrm{Absorb}}} = \frac{ 2 b n_h d_h (d_c + s) s}{2 b n_h d_c (d_h + s) s} \approx \frac{d_h}{d_c} = \frac{1}{4}
+    \frac{T_{\textrm{Normal}}}{T_{\textrm{Absorb}}} = \frac{d_h (d_c + s)}{d_c (d_h + s)}  = \frac{s + 512}{4 s + 512} \in \left(\frac{1}{4}, 1\right)
 
 
 **Decode** 阶段 :math:`s_q = 1, s_{kv} = s`，
 
 .. math::
-    \frac{T_{\textrm{Normal}}}{T_{\textrm{Absorb}}} = \frac{ 2 b n_h d_h (d_c s + s)}{2 b n_h d_c (d_h + s)} = \frac{d_h (d_c + 1) s}{d_c (d_h + s)}
-    \approx d_h
+    \begin{align*}
+    & T_{\textrm{Normal}}^{K} = 2 b d_c d_h n_h + 2 b n_h s d_h = 2 b n_h d_h (d_c + s), & \boxed{\textrm{cache k}} \\
+    & T_{\textrm{Normal}}^{L} = 2 b s d_c d_h n_h + 2 b n_h s d_h = 2 b n_h d_h (d_c s + s), &\boxed{\textrm{cache latent}} \\
+    & T_{\textrm{Absorb}} = 2 b d_c d_h n_h + 2 b n_h s d_c = 2 b n_h d_c (d_h + s), \\
+    \end{align*}
 
-从计算量上看，**Prefill** 阶段 ``Normal`` 的计算量比较小，且由于 **Prefill** 阶段是 ``计算瓶颈``，所以采用公式(15)或者(12)计算，即 **显式的计算出q和k**。
+.. math::
+    \frac{T_{\textrm{Normal}}^{K}}{T_{\textrm{Absorb}}} = \frac{ 2 b n_h d_h (d_c + s)}{2 b n_h d_c (d_h + s)} = \frac{d_h (d_c + s)}{d_c (d_h + s)}
+    = \frac{s + 512}{4 s + 512} \in (0.25, 1)
 
-而 **Decode** 阶段 ``Absorb`` 方式的计算量小，且瓶颈是 ``显存带宽``，矩阵运算是 :math:`(b, n_h, 1, d_c) \times (b, 1, s, d_c)`，假定为bfloat16精度，读取的memory为
+.. math::
+    \frac{T_{\textrm{Normal}}^{L}}{T_{\textrm{Absorb}}} = \frac{ 2 b n_h d_h (d_c s + s)}{2 b n_h d_c (d_h + s)} = \frac{d_h (d_c + 1) s}{d_c (d_h + s)}
+    = \frac{513 s}{4 s + 512} \in (0.99, 128.25)
+
+从计算量上看，**Prefill** 阶段 ``Normal`` 的计算量比较小，且由于 **Prefill** 阶段是 ``计算瓶颈``，所以 **显式的计算出q和k**。
+
+而 **Decode** 阶段，缓存k cache的时候计算量最小（但会导致kv cache很大）， 极限情况是1/4的 ``Absort`` 的计算量，但由于 **Decode** 瓶颈是 ``显存带宽``。
+``Absort`` 方式的矩阵运算是 :math:`(b, n_h, 1, d_c) \times (b, 1, s, d_c)`，假定为bfloat16精度，读取的memory为
 
 .. math::
     M_{\textrm{MLA}} = 2 b n_h d_c + 2 b s d_c = 2 b d_c (n_h + s).
@@ -157,9 +168,9 @@ where :math:`W^{O} \in \mathbb{R}^{d_h n_h \times d}` denotes the output project
 内存读取比例为：
 
 .. math::
-    \frac{M_{\textrm{MLA}}}{M_{\textrm{MHA}}} = \frac{2 b d_c (n_h + s)}{2 b d_h n_h (1 + s)} = \frac{128 + s}{ 32 (1 + s)} \approx \frac{1}{32}.
+    \frac{M_{\textrm{MLA}}}{M_{\textrm{MHA}}} = \frac{2 b d_c (n_h + s)}{2 b d_h n_h (1 + s)} = \frac{128 + s}{ 32 (1 + s)}.
 
-所以 **Decode** 阶段采用了 ``Absorb`` 方式计算，并可以复用MQA (Multi-Query Attention) 的实现。
+当 :math:`s \ge 20`，访存比值为0.22，极限情况为1/32。所以 **Decode** 阶段采用了 ``Absorb`` 方式计算，并可以复用MQA (Multi-Query Attention) 的实现。
 
 
 矩阵吸收问题总结
