@@ -2,6 +2,11 @@
 floating point number
 *****************************
 
+.. todo::
+
+  1. Scale e.g. E8M0
+  2. 类型转换
+
 Microscaling Formats
 =========================
 

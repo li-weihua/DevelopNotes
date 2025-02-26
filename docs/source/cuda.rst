@@ -1,8 +1,17 @@
 cuda programming
 *******************
 
+.. todo::
+
+    1. cuda mma/wgmma 矩阵乘的实现和优化
+
+
 MMA (Matrix Multiply-Accumulate Instructions)
 =================================================
+
+Tensor core 的操作的基础形状如下：
+
+.. figure:: /_static/images/tensor_core_basic_shape.png
 
 
 

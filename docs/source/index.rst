@@ -8,14 +8,14 @@ Develop Notes
    :caption: Contents:
 
    deepseek
+   floating_point_number
+   cuda
    multi_platform_dev
    operator
    mathfunctions
    onnxruntime
-   floating_point_number
    reStructuredText
    develop_environment
-   cuda
    mlsys
    deeplearning_others
 
